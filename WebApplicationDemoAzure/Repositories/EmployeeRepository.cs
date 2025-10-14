@@ -47,5 +47,19 @@ namespace WebApplicationDemoAzure.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> GetUserMasterDetailsAsync(string email, string password)
+        {
+            try
+            {
+                var data = await _context.UserMaster.Where(x=>x.Email_Id==email && x.Password==password).FirstOrDefaultAsync().ConfigureAwait(false);
+                if (data != null) return true;
+                else
+                    return false;
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

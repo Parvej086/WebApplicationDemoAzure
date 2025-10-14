@@ -10,5 +10,6 @@ namespace WebApplicationDemoAzure.Data
         }
 
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<UserMaster> UserMaster { get; set; }
     }
 }

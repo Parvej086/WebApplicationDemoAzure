@@ -5,6 +5,22 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    #loader {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.7) url('https://i.stack.imgur.com/ATB3o.gif') center center no-repeat;
+    }
+</style>
+
+<div id="loader"></div>
 
 <div class="container mt-4">
     <h2>Employee Management</h2>
@@ -79,7 +95,47 @@
         });
     });
 
+    function showLoader() {
+        $('#loader').show();
+    }
+    function hideLoader() {
+        $('#loader').hide();
+    }
+    function showSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Employee added successfully.',
+            confirmButtonText: 'OK'
+        });
+    }
+    function showUpdateSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Employee updated successfully.',
+            confirmButtonText: 'OK'
+        });
+    }
+    function showDeleteSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Employee deleted successfully.',
+            confirmButtonText: 'OK'
+        });
+    }
+    function showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Something went wrong!',
+            confirmButtonText: 'OK'
+        });
+    }
+
     function loadEmployees() {
+        showLoader();
         $.ajax({
             url: '/Employees/GetAll',
             type: 'GET',
@@ -87,18 +143,23 @@
                 let rows = '';
                 $.each(data, function (i, emp) {
                     rows += `<tr>
-                            <td>${emp.id}</td>
-                            <td>${emp.name}</td>
-                            <td>${emp.email}</td>
-                            <td>${emp.department}</td>
-                            <td>${emp.salary}</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning" onclick="openEditModal(${emp.id}, '${emp.name}', '${emp.email}', '${emp.department}', ${emp.salary})">Edit</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteEmployee(${emp.id})">Delete</button>
-                            </td>
-                        </tr>`;
+                                <td>${emp.id}</td>
+                                <td>${emp.name}</td>
+                                <td>${emp.email}</td>
+                                <td>${emp.department}</td>
+                                <td>${emp.salary}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="openEditModal(${emp.id}, '${emp.name}', '${emp.email}', '${emp.department}', ${emp.salary})">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteEmployee(${emp.id})">Delete</button>
+                                </td>
+                            </tr>`;
                 });
                 $('#employeeTable tbody').html(rows);
+                hideLoader();
+            },
+            error: function () {
+                hideLoader();
+                showError("Failed to load employees.");
             }
         });
     }
@@ -130,18 +191,25 @@
             salary: parseFloat($("#employeeSalary").val())
         };
 
+        showLoader();
         $.ajax({
             url: '/Employees/Create',
             type: 'POST',
             contentType: "application/json",
             data: JSON.stringify(employee),
             success: function (res) {
+                hideLoader();
                 if (res.success) {
                     $('#employeeModal').modal('hide');
                     loadEmployees();
+                    showSuccess("Employee added successfully.");
                 } else {
-                    alert("Error inserting employee.");
+                    showError(res.message || "Error inserting employee.");
                 }
+            },
+            error: function () {
+                hideLoader();
+                showError("Server error while creating employee.");
             }
         });
     }
@@ -155,36 +223,59 @@
             salary: parseFloat($("#employeeSalary").val())
         };
 
+        showLoader();
         $.ajax({
             url: '/Employees/Update',
             type: 'PUT',
             contentType: "application/json",
             data: JSON.stringify(employee),
             success: function (res) {
+                hideLoader();
                 if (res.success) {
                     $('#employeeModal').modal('hide');
                     loadEmployees();
+                    showUpdateSuccess("Employee updated successfully.");
                 } else {
-                    alert("Error updating employee.");
+                    showError(res.message || "Error updating employee.");
                 }
+            },
+            error: function () {
+                hideLoader();
+                showError("Server error while updating employee.");
             }
         });
     }
 
     function deleteEmployee(id) {
-        if (confirm("Are you sure to delete this employee?")) {
-            $.ajax({
-                url: '/Employees/Delete',
-                type: 'POST',
-                data: { id: id },
-                success: function (res) {
-                    if (res.success) {
-                        loadEmployees();
-                    } else {
-                        alert("Delete failed.");
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This action cannot be undone!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoader();
+                $.ajax({
+                    url: '/Employees/Delete',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (res) {
+                        hideLoader();
+                        if (res.success) {
+                            loadEmployees();
+                            showDeleteSuccess("Employee deleted successfully.");
+                        } else {
+                            showError(res.message || "Delete failed.");
+                        }
+                    },
+                    error: function () {
+                        hideLoader();
+                        showError("Server error while deleting employee.");
                     }
-                }
-            });
-        }
+                });
+            }
+        });
     }
 </script>

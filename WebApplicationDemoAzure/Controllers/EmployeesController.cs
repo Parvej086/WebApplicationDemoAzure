@@ -12,6 +12,29 @@ namespace WebApplicationDemoAzure.Controllers
         {
             _employeeRepository = employeeRepository;
         }
+
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login([FromBody] UserMaster model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest("Invalid input");
+
+            // Dummy validation logic
+            bool userDetails = await _employeeRepository.GetUserMasterDetailsAsync(model.Email_Id, model.Password);
+            if(userDetails)
+            {
+                // Normally, set up auth cookies or session
+                return Ok(new { success = true, message = "Login successful" });
+            }
+            return Unauthorized(new { success = false, message = "Invalid credentials" });
+        }
+
+
         [HttpGet()]
         public IActionResult Index()
         {
