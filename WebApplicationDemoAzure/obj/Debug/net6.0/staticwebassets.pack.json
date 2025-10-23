@@ -13,6 +13,18 @@
       "PackagePath": "staticwebassets\\favicon.ico"
     },
     {
+      "Id": "C:\\Users\\hp 840 g5\\source\\WebApplicationDemoAzure\\WebApplicationDemoAzure\\wwwroot\\images\\products\\662a3ffc-c30d-4cf7-8802-70e2e4a5a90e.jpg",
+      "PackagePath": "staticwebassets\\images\\products\\662a3ffc-c30d-4cf7-8802-70e2e4a5a90e.jpg"
+    },
+    {
+      "Id": "C:\\Users\\hp 840 g5\\source\\WebApplicationDemoAzure\\WebApplicationDemoAzure\\wwwroot\\images\\products\\b40c478a-131c-4427-ab6d-f37fa330fb10.jpg",
+      "PackagePath": "staticwebassets\\images\\products\\b40c478a-131c-4427-ab6d-f37fa330fb10.jpg"
+    },
+    {
+      "Id": "C:\\Users\\hp 840 g5\\source\\WebApplicationDemoAzure\\WebApplicationDemoAzure\\wwwroot\\images\\products\\c821f8b4-e6e7-447b-9b05-be02eb62705e.jpg",
+      "PackagePath": "staticwebassets\\images\\products\\c821f8b4-e6e7-447b-9b05-be02eb62705e.jpg"
+    },
+    {
       "Id": "C:\\Users\\hp 840 g5\\source\\WebApplicationDemoAzure\\WebApplicationDemoAzure\\wwwroot\\js\\site.js",
       "PackagePath": "staticwebassets\\js\\site.js"
     },

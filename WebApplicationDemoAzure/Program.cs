@@ -9,6 +9,7 @@ builder.Services.AddControllersWithViews();
 
 // Add services to the container.
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // Add DbContext with SQL Server connection string
 builder.Services.AddDbContext<EmployeeDbContext>(options =>

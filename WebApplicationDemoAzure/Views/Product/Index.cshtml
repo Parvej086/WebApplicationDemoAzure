@@ -1,0 +1,277 @@
+﻿@{
+    ViewData["Title"] = "Product";
+}
+
+<!-- ✅ CSS Libraries -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+
+
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-primary fw-bold">🛍️ Product List</h2>
+
+    <!-- Add Product Button -->
+    <div class="text-end mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#productModal">
+            <i class="bi bi-plus-circle"></i> Add Product
+        </button>
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" class="text-center my-4" style="display:none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 fw-semibold text-secondary">Processing...</p>
+    </div>
+
+    <!-- Product Table -->
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-bordered table-striped text-center align-middle" id="tblProducts" style="width:100%;">
+                <thead class="table-primary">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Description</th>
+                        <th>Image</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 🧱 Bootstrap Modal for Add/Edit Product -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="productModalLabel">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="id" />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
+                            <input type="text" id="name" class="form-control" placeholder="Product Name" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Price</label>
+                            <input type="number" id="price" class="form-control" placeholder="Price" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Description</label>
+                            <textarea id="description" class="form-control" placeholder="Description"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product Image</label>
+                            <input type="file" id="imageFile" class="form-control" />
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <img id="previewImage" src="" alt="Preview" class="img-thumbnail mt-3" style="display:none; max-height:150px;" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnSave" class="btn btn-success"><i class="bi bi-save"></i> Save</button>
+                <button id="btnUpdate" class="btn btn-primary" style="display:none;"><i class="bi bi-arrow-repeat"></i> Update</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Script Section -->
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+    <script>
+        let table;
+        let modal = new bootstrap.Modal(document.getElementById('productModal'));
+
+        $(document).ready(function () {
+            initTable();
+            loadProducts();
+
+            // Preview image before upload
+            $("#imageFile").change(function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        $("#previewImage").attr("src", e.target.result).show();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Save Product (Add)
+            $("#btnSave").click(function () {
+                let formData = getFormData();
+                ajaxRequest('/Product/Create', formData, "Product added successfully!");
+            });
+
+            // Update Product
+            $("#btnUpdate").click(function () {
+                let formData = getFormData(true);
+                ajaxRequest('/Product/Update', formData, "Product updated successfully!");
+            });
+        });
+
+        function showLoader(show) {
+            $("#loader").toggle(show);
+        }
+
+        function initTable() {
+            table = $('#tblProducts').DataTable({
+                searching: true,
+                paging: true,
+                info: true,
+                pageLength: 5,
+                lengthChange: false
+            });
+        }
+
+        function reloadTable(data) {
+            table.clear().draw();
+            data.forEach(item => {
+                const img = item.imagePath
+                    ? `<img src='${item.imagePath}' class='rounded' width='70' height='60'/>`
+                    : `<span class='text-muted'>No Image</span>`;
+                table.row.add([
+                    item.id,
+                    item.name,
+                    `$${item.price.toFixed(2)}`,
+                    item.description ?? '',
+                    img,
+                    `
+                                        <button class="btn btn-sm btn-warning me-2" onclick="editProduct(${item.id})">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteProduct(${item.id})">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                        `
+                ]).draw(false);
+            });
+        }
+
+        function loadProducts() {
+            showLoader(true);
+            $.get('/Product/GetAll', function (data) {
+                reloadTable(data);
+                showLoader(false);
+            }).fail(() => {
+                showLoader(false);
+                Swal.fire('Error!', 'Failed to load products!', 'error');
+            });
+        }
+
+        function getFormData(isUpdate = false) {
+            let formData = new FormData();
+            if (isUpdate) formData.append("Id", $("#id").val());
+            formData.append("Name", $("#name").val());
+            formData.append("Price", $("#price").val());
+            formData.append("Description", $("#description").val());
+            if ($("#imageFile")[0].files.length > 0)
+                formData.append("imageFile", $("#imageFile")[0].files[0]);
+            return formData;
+        }
+
+        function ajaxRequest(url, formData, successMessage) {
+            showLoader(true);
+            $.ajax({
+                url: url,
+                type: "POST",
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function () {
+                    Swal.fire('Success!', successMessage, 'success');
+                    modal.hide();
+                    loadProducts();
+                    resetForm();
+                    showLoader(false);
+                },
+                error: function () {
+                    Swal.fire('Error!', 'Something went wrong!', 'error');
+                    showLoader(false);
+                }
+            });
+        }
+
+        // Edit Product
+        window.editProduct = function (id) {
+            $.get('/Product/GetAll', function (data) {
+                const product = data.find(p => p.id === id);
+                if (product) {
+                    $("#id").val(product.id);
+                    $("#name").val(product.name);
+                    $("#price").val(product.price);
+                    $("#description").val(product.description);
+                    if (product.imagePath) {
+                        $("#previewImage").attr("src", product.imagePath).show();
+                    } else {
+                        $("#previewImage").hide();
+                    }
+
+                    $("#btnSave").hide();
+                    $("#btnUpdate").show();
+                    $("#productModalLabel").text("Edit Product");
+                    modal.show();
+                }
+            });
+        }
+
+        // Delete Product
+        window.deleteProduct = function (id) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "This action cannot be undone!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoader(true);
+                    $.ajax({
+                        url: '/Product/Delete?id=' + id,
+                        type: 'DELETE',
+                        success: function () {
+                            Swal.fire('Deleted!', 'Product has been removed.', 'success');
+                            loadProducts();
+                            showLoader(false);
+                        },
+                        error: function () {
+                            Swal.fire('Error!', 'Failed to delete product.', 'error');
+                            showLoader(false);
+                        }
+                    });
+                }
+            });
+        }
+
+        function resetForm() {
+            $("#productForm")[0].reset();
+            $("#previewImage").hide();
+            $("#id").val('');
+            $("#btnSave").show();
+            $("#btnUpdate").hide();
+            $("#productModalLabel").text("Add Product");
+        }
+    </script>
+}
